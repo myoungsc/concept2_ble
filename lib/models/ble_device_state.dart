@@ -1,3 +1,5 @@
+import 'package:easy_localization/easy_localization.dart';
+
 enum BleConnectionState {
   disconnected,
   scanning,
@@ -12,19 +14,19 @@ extension BleConnectionStateX on BleConnectionState {
   String get label {
     switch (this) {
       case BleConnectionState.disconnected:
-        return '연결 안됨';
+        return 'ble_disconnected'.tr();
       case BleConnectionState.scanning:
-        return '스캔 중…';
+        return 'ble_scanning'.tr();
       case BleConnectionState.connecting:
-        return '연결 중…';
+        return 'ble_connecting'.tr();
       case BleConnectionState.connected:
-        return '연결 완료';
+        return 'ble_connected'.tr();
       case BleConnectionState.subscribed:
-        return '데이터 수신 중';
+        return 'ble_subscribed'.tr();
       case BleConnectionState.reconnecting:
-        return '연결 끊김 (재연결 중)';
+        return 'ble_reconnecting'.tr();
       case BleConnectionState.failed:
-        return '연결 실패';
+        return 'ble_failed'.tr();
     }
   }
 

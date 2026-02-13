@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1280, initial-scale=1.0">
+<title>Concept 2: Nautical - Concept2 Race</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800;900&family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --navy-deep: #0b1929;
+    --navy-mid: #122640;
+    --navy-light: #1a3358;
+    --ocean-blue: #2563eb;
+    --brass: #c9a84c;
+    --brass-light: #e8d48b;
+    --cream: #f5f0e8;
+    --cream-dark: #e8dfd0;
+    --white: #ffffff;
+    --red-signal: #dc2626;
+    --green-signal: #16a34a;
+    --text-dark: #1a2332;
+    --text-muted: #6b7b8d;
+
+    --lane-1: #2563eb;
+    --lane-2: #dc2626;
+    --lane-3: #16a34a;
+    --lane-4: #c9a84c;
+    --lane-5: #7c3aed;
+    --lane-6: #ea580c;
+  }
+
+  body {
+    background: var(--cream);
+    color: var(--text-dark);
+    font-family: 'DM Sans', sans-serif;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+  }
+
+  /* ===== Texture ===== */
+  .texture-overlay {
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ===== Wave decoration ===== */
+  .wave-bottom {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 100px;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.4;
+  }
+
+  .wave-bottom svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  /* ===== App ===== */
+  .app {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ===== Header ===== */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 32px;
+    background: var(--navy-deep);
+    color: var(--cream);
+    position: relative;
+  }
+
+  .header::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--brass), var(--brass-light), var(--brass));
+  }
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .logo-group {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .logo-crest {
+    width: 42px;
+    height: 42px;
+    border: 2px solid var(--brass);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+
+  .logo-crest::before {
+    content: '';
+    position: absolute;
+    inset: 3px;
+    border: 1px solid rgba(201,168,76,0.3);
+    border-radius: 50%;
+  }
+
+  .logo-crest-text {
+    font-family: 'Playfair Display', serif;
+    font-size: 14px;
+    font-weight: 800;
+    color: var(--brass);
+  }
+
+  .logo-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+
+  .logo-subtitle {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--brass);
+    font-weight: 500;
+  }
+
+  .divider-vert {
+    width: 1px;
+    height: 32px;
+    background: rgba(201,168,76,0.3);
+  }
+
+  .target-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .target-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    color: rgba(245,240,232,0.5);
+    font-weight: 500;
+  }
+
+  .target-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--brass-light);
+  }
+
+  .header-center {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+  }
+
+  .timer-container {
+    position: relative;
+  }
+
+  .timer-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 46px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--cream);
+  }
+
+  .timer-value .ms {
+    font-size: 28px;
+    opacity: 0.5;
+  }
+
+  .timer-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 4px;
+    color: rgba(245,240,232,0.4);
+    margin-top: -2px;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .status-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .status-live {
+    background: rgba(220,38,38,0.15);
+    border: 1px solid rgba(220,38,38,0.3);
+    color: #ff6b6b;
+  }
+
+  .status-live-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--red-signal);
+    animation: blink 1.2s ease-in-out infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .finish-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 16px;
+    border-radius: 20px;
+    background: rgba(22,163,74,0.12);
+    border: 1px solid rgba(22,163,74,0.25);
+    color: #4ade80;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  /* ===== Lanes ===== */
+  .lanes-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 14px 24px;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  .lane {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    background: var(--white);
+    border-radius: 12px;
+    padding: 0 20px;
+    gap: 18px;
+    border: 1px solid var(--cream-dark);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    transition: all 0.3s;
+    min-height: 0;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .lane::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 5px;
+  }
+
+  .lane-color-1::before { background: var(--lane-1); }
+  .lane-color-2::before { background: var(--lane-2); }
+  .lane-color-3::before { background: var(--lane-3); }
+  .lane-color-4::before { background: var(--lane-4); }
+  .lane-color-5::before { background: var(--lane-5); }
+  .lane-color-6::before { background: var(--lane-6); }
+
+  .lane.finished {
+    background: linear-gradient(90deg, rgba(22,163,74,0.04) 0%, var(--white) 30%);
+    border-color: rgba(22,163,74,0.25);
+  }
+
+  .lane.first-place {
+    border-color: var(--brass);
+    box-shadow: 0 2px 12px rgba(201,168,76,0.15);
+  }
+
+  /* Rank */
+  .rank {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Playfair Display', serif;
+    font-size: 20px;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+
+  .rank-1 {
+    background: linear-gradient(135deg, #ffd700, #daa520);
+    color: #3d2e00;
+    box-shadow: 0 2px 8px rgba(218,165,32,0.3);
+  }
+
+  .rank-2 {
+    background: linear-gradient(135deg, #e0e0e0, #b0b0b0);
+    color: #333;
+  }
+
+  .rank-3 {
+    background: linear-gradient(135deg, #d4a373, #b07d45);
+    color: #3d2400;
+  }
+
+  .rank-other {
+    background: #f0ece4;
+    color: var(--text-muted);
+    border: 1px solid var(--cream-dark);
+  }
+
+  /* Name */
+  .participant-info {
+    width: 150px;
+    flex-shrink: 0;
+    padding-left: 8px;
+  }
+
+  .participant-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text-dark);
+  }
+
+  .participant-status {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    font-weight: 600;
+    margin-top: 1px;
+  }
+
+  .status-rowing { color: var(--ocean-blue); }
+  .status-finished { color: var(--green-signal); }
+
+  /* Track */
+  .track-area {
+    flex: 1;
+    height: 32px;
+    position: relative;
+    background: #f0ece4;
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .track-divisions {
+    position: absolute;
+    inset: 0;
+    display: flex;
+  }
+
+  .track-div {
+    flex: 1;
+    border-right: 1px dashed rgba(0,0,0,0.06);
+  }
+
+  .track-div:last-child { border: none; }
+
+  .track-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    border-radius: 16px;
+    transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .lane-color-1 .track-fill { background: linear-gradient(90deg, rgba(37,99,235,0.2), var(--lane-1)); }
+  .lane-color-2 .track-fill { background: linear-gradient(90deg, rgba(220,38,38,0.2), var(--lane-2)); }
+  .lane-color-3 .track-fill { background: linear-gradient(90deg, rgba(22,163,74,0.2), var(--lane-3)); }
+  .lane-color-4 .track-fill { background: linear-gradient(90deg, rgba(201,168,76,0.2), var(--lane-4)); }
+  .lane-color-5 .track-fill { background: linear-gradient(90deg, rgba(124,58,237,0.2), var(--lane-5)); }
+  .lane-color-6 .track-fill { background: linear-gradient(90deg, rgba(234,88,12,0.2), var(--lane-6)); }
+
+  .boat-icon {
+    position: absolute;
+    right: -2px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 18px;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));
+  }
+
+  /* Stats */
+  .stats-group {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-shrink: 0;
+    width: 380px;
+    justify-content: flex-end;
+  }
+
+  .stat {
+    text-align: center;
+  }
+
+  .stat-label {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+
+  .stat-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text-dark);
+  }
+
+  .stat-value.dist {
+    font-size: 21px;
+    font-weight: 700;
+  }
+
+  .stat-value.time-val {
+    color: var(--text-muted);
+    font-size: 14px;
+  }
+
+  .stat-unit {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 500;
+    margin-left: 1px;
+  }
+
+  /* ===== Setup Screen ===== */
+  .setup-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+  }
+
+  .setup-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 36px;
+    font-weight: 800;
+    color: var(--navy-deep);
+    margin-bottom: 6px;
+  }
+
+  .setup-subtitle {
+    font-size: 15px;
+    color: var(--text-muted);
+    letter-spacing: 1px;
+    margin-bottom: 40px;
+  }
+
+  .setup-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    max-width: 720px;
+    width: 100%;
+    margin-bottom: 36px;
+  }
+
+  .setup-card {
+    background: var(--white);
+    border: 2px solid var(--cream-dark);
+    border-radius: 16px;
+    padding: 32px 20px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .setup-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--navy-deep);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .setup-card:hover {
+    border-color: var(--navy-light);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(11,25,41,0.1);
+  }
+
+  .setup-card:hover::before { opacity: 1; }
+
+  .setup-card.active {
+    border-color: var(--navy-deep);
+    box-shadow: 0 4px 20px rgba(11,25,41,0.15);
+  }
+
+  .setup-card.active::before { opacity: 1; background: var(--brass); }
+
+  .setup-distance {
+    font-family: 'Playfair Display', serif;
+    font-size: 36px;
+    font-weight: 800;
+    color: var(--navy-deep);
+  }
+
+  .setup-unit {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+
+  .setup-btn {
+    max-width: 720px;
+    width: 100%;
+    padding: 18px;
+    background: var(--navy-deep);
+    color: var(--cream);
+    border: none;
+    border-radius: 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .setup-btn:hover {
+    background: var(--navy-mid);
+    box-shadow: 0 4px 16px rgba(11,25,41,0.2);
+  }
+
+  /* ===== Result Screen ===== */
+  .result-container {
+    flex: 1;
+    overflow: auto;
+    padding: 30px 40px;
+  }
+
+  .result-hero {
+    text-align: center;
+    margin-bottom: 30px;
+    position: relative;
+  }
+
+  .result-trophy {
+    font-size: 48px;
+    margin-bottom: 8px;
+  }
+
+  .result-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--navy-deep);
+  }
+
+  .result-meta {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin-top: 4px;
+    letter-spacing: 1px;
+  }
+
+  .result-list {
+    max-width: 900px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .result-row {
+    display: flex;
+    align-items: center;
+    background: var(--white);
+    border-radius: 14px;
+    padding: 16px 24px;
+    gap: 20px;
+    border: 1px solid var(--cream-dark);
+    transition: all 0.2s;
+  }
+
+  .result-row.winner {
+    border: 2px solid var(--brass);
+    box-shadow: 0 2px 12px rgba(201,168,76,0.12);
+    background: linear-gradient(90deg, rgba(201,168,76,0.06), var(--white) 30%);
+  }
+
+  .result-row-rank {
+    font-family: 'Playfair Display', serif;
+    font-size: 24px;
+    font-weight: 900;
+    width: 48px;
+    text-align: center;
+  }
+
+  .rr-gold { color: #b8860b; }
+  .rr-silver { color: #808080; }
+  .rr-bronze { color: #a0622a; }
+
+  .result-row-name {
+    flex: 1;
+    font-family: 'Playfair Display', serif;
+    font-size: 19px;
+    font-weight: 700;
+  }
+
+  .result-row-details {
+    display: flex;
+    gap: 24px;
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+
+  .result-row-time {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--navy-deep);
+  }
+
+  /* ===== Page Nav ===== */
+  .page-nav {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px;
+    background: var(--white);
+    border-top: 1px solid var(--cream-dark);
+  }
+
+  .page-nav button {
+    background: transparent;
+    border: 1px solid var(--cream-dark);
+    border-radius: 8px;
+    padding: 8px 24px;
+    color: var(--text-muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .page-nav button:hover {
+    background: var(--cream);
+    color: var(--text-dark);
+  }
+
+  .page-nav button.active {
+    background: var(--navy-deep);
+    color: var(--cream);
+    border-color: var(--navy-deep);
+  }
+
+  .page { display: none; flex-direction: column; height: 100%; }
+  .page.active { display: flex; }
+
+  /* Animations */
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .lane {
+    animation: fade-up 0.5s ease-out backwards;
+  }
+  .lane:nth-child(1) { animation-delay: 0.05s; }
+  .lane:nth-child(2) { animation-delay: 0.1s; }
+  .lane:nth-child(3) { animation-delay: 0.15s; }
+  .lane:nth-child(4) { animation-delay: 0.2s; }
+  .lane:nth-child(5) { animation-delay: 0.25s; }
+  .lane:nth-child(6) { animation-delay: 0.3s; }
+</style>
+</head>
+<body>
+
+<div class="texture-overlay"></div>
+
+<div class="wave-bottom">
+  <svg viewBox="0 0 1440 100" preserveAspectRatio="none">
+    <path d="M0,40 C200,80 400,10 600,50 C800,90 1000,20 1200,60 C1300,75 1380,35 1440,45 L1440,100 L0,100 Z" fill="rgba(11,25,41,0.04)"/>
+    <path d="M0,60 C240,30 480,80 720,45 C960,10 1200,70 1440,35 L1440,100 L0,100 Z" fill="rgba(11,25,41,0.03)"/>
+  </svg>
+</div>
+
+<div class="app">
+
+  <!-- ===== RACE ===== -->
+  <div class="page active" id="page-race">
+    <div class="header">
+      <div class="header-left">
+        <div class="logo-group">
+          <div class="logo-crest"><span class="logo-crest-text">C2</span></div>
+          <div>
+            <div class="logo-title">Concept2</div>
+            <div class="logo-subtitle">Race Display</div>
+          </div>
+        </div>
+        <div class="divider-vert"></div>
+        <div class="target-info">
+          <div class="target-label">Target</div>
+          <div class="target-value">2000<span class="stat-unit" style="color:rgba(232,212,139,0.6)">m</span></div>
+        </div>
+      </div>
+
+      <div class="header-center">
+        <div class="timer-container">
+          <div class="timer-value">04:32<span class="ms">.7</span></div>
+          <div class="timer-label">Elapsed Time</div>
+        </div>
+      </div>
+
+      <div class="header-right">
+        <div class="status-pill status-live">
+          <div class="status-live-dot"></div>
+          <span>LIVE</span>
+        </div>
+        <div class="finish-badge">
+          <span>&#9872;</span>
+          <span>2 / 6 Finished</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="lanes-container">
+      <div class="lane first-place finished lane-color-1">
+        <div class="rank rank-1">1</div>
+        <div class="participant-info">
+          <div class="participant-name">Kim Minjun</div>
+          <div class="participant-status status-finished">Finished</div>
+        </div>
+        <div class="track-area">
+          <div class="track-divisions"><div class="track-div"></div><div class="track-div"></div><div class="track-div"></div><div class="track-div"></div><div class="track-div"></div></div>
+          <div class="track-fill" style="width:100%"><span class="boat-icon">&#9978;</span></div>
+        </div>
+        <div class="stats-group">
+          <div class="stat"><div class="stat-label">Distance</div><div class="stat-value dist">2000<span class="stat-unit">m</span></div></div>
+          <div class="stat"><div class="stat-label">SPM</div><div class="stat-value">32</div></div>
+          <div class="stat"><div class="stat-label">Watts</div><div class="stat-value">245</div></div>
+          <div class="stat"><div class="stat-label">Time</div><div class="stat-value time-val">4:12.3</div></div>
+        </div>
+      </div>
+
+      <div class="lane finished lane-color-2">
+        <div class="rank rank-2">2</div>
+        <div class="participant-info">
+          <div class="participant-name">Lee Seojin</div>
+          <div class="participant-status status-finished">Finished</div>
+        </div>
+        <div class="track-area">
+          <div class="track-divisions"><div class="track-div"></div><div class="track-div"></div><div class="track-div"></div><div class="track-div"></div><div class="track-div"></div></div>
+          <div class="track-fill" style="width:100%"><span class="boat-icon">&#9978;</span></div>
+        </div>
+        <div class="stats-group">
+          <div class="stat"><div class="stat-label">Distance</div><div class="stat-value dist">2000<span class="stat-unit">m</span></div></div>
+          <div class="stat"><div class="stat-label">SPM</div><div class="stat-value">30</div></div>
+          <div class="stat"><div class="stat-label">Watts</div><div class="stat-value">228</div></div>
+          <div class="stat"><div class="stat-label">Time</div><div class="stat-value time-val">4:25.1</div></div>
+        </div>
+      </div>
+
+      <div class="lane lane-color-3">
+        <div class="rank rank-3">3</div>
+        <div class="participant-info">
+          <div class="participant-name">Park Jiwon</div>
+          <div class="participant-status status-rowing">Rowing</div>
+        </div>
+        <div class="track-area">
+          <div class="track-divisions"><div class="track-div"></div><div class="track-div"></div><div class="track-div"></div><div class="track-div"></div><div class="track-div"></div></div>
+          <div class="track-fill" style="width:87%"><span class="boat-icon">&#9978;</span></div>
+        </div>
+        <div class="stats-group">
+          <div class="stat"><div class="stat-label">Distance</div><div class="stat-value dist">1742<span class="stat-unit">m</span></div></div>
+          <div class="stat"><div class="stat-label">SPM</div><div class="stat-value">28</div></div>
+          <div class="stat"><div class="stat-label">Watts</div><div class="stat-value">198</div></div>
+          <div class="stat"><div class="stat-label">Time</div><div class="stat-value time-val">4:32.7</div></div>
+        </div>
+      </div>
+
+      <div class="lane lane-color-4">
+        <div class="rank rank-other">4</div>
+        <div class="participant-info">
+          <div class="participant-name">Choi Yuna</div>
+          <div class="participant-status status-rowing">Rowing</div>
+        </div>
+        <div class="track-area">
+          <div class="track-divisions"><div class="track-div"></div><div class="track-div"></div><div class="track-div"></div><div class="track-div"></div><div class="track-div"></div></div>
+          <div class="track-fill" style="width:79%"><span class="boat-icon">&#9978;</span></div>
+        </div>
+        <div class="stats-group">
+          <div class="stat"><div class="stat-label">Distance</div><div class="stat-value dist">1583<span class="stat-unit">m</span></div></div>
+          <div class="stat"><div class="stat-label">SPM</div><div class="stat-value">26</div></div>
+          <div class="stat"><div class="stat-label">Watts</div><div class="stat-value">175</div></div>
+          <div class="stat"><div class="stat-label">Time</div><div class="stat-value time-val">4:32.7</div></div>
+        </div>
+      </div>
+
+      <div class="lane lane-color-5">
+        <div class="rank rank-other">5</div>
+        <div class="participant-info">
+          <div class="participant-name">Jung Dohyun</div>
+          <div class="participant-status status-rowing">Rowing</div>
+        </div>
+        <div class="track-area">
+          <div class="track-divisions"><div class="track-div"></div><div class="track-div"></div><div class="track-div"></div><div class="track-div"></div><div class="track-div"></div></div>
+          <div class="track-fill" style="width:72%"><span class="boat-icon">&#9978;</span></div>
+        </div>
+        <div class="stats-group">
+          <div class="stat"><div class="stat-label">Distance</div><div class="stat-value dist">1440<span class="stat-unit">m</span></div></div>
+          <div class="stat"><div class="stat-label">SPM</div><div class="stat-value">24</div></div>
+          <div class="stat"><div class="stat-label">Watts</div><div class="stat-value">162</div></div>
+          <div class="stat"><div class="stat-label">Time</div><div class="stat-value time-val">4:32.7</div></div>
+        </div>
+      </div>
+
+      <div class="lane lane-color-6">
+        <div class="rank rank-other">6</div>
+        <div class="participant-info">
+          <div class="participant-name">Han Soyeon</div>
+          <div class="participant-status status-rowing">Rowing</div>
+        </div>
+        <div class="track-area">
+          <div class="track-divisions"><div class="track-div"></div><div class="track-div"></div><div class="track-div"></div><div class="track-div"></div><div class="track-div"></div></div>
+          <div class="track-fill" style="width:64%"><span class="boat-icon">&#9978;</span></div>
+        </div>
+        <div class="stats-group">
+          <div class="stat"><div class="stat-label">Distance</div><div class="stat-value dist">1285<span class="stat-unit">m</span></div></div>
+          <div class="stat"><div class="stat-label">SPM</div><div class="stat-value">23</div></div>
+          <div class="stat"><div class="stat-label">Watts</div><div class="stat-value">148</div></div>
+          <div class="stat"><div class="stat-label">Time</div><div class="stat-value time-val">4:32.7</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SETUP ===== -->
+  <div class="page" id="page-setup">
+    <div class="setup-container">
+      <div class="setup-title">Race Distance</div>
+      <div class="setup-subtitle">Select target distance for the race</div>
+      <div class="setup-grid">
+        <div class="setup-card"><div class="setup-distance">200</div><div class="setup-unit">meters</div></div>
+        <div class="setup-card"><div class="setup-distance">500</div><div class="setup-unit">meters</div></div>
+        <div class="setup-card active"><div class="setup-distance">1000</div><div class="setup-unit">meters</div></div>
+        <div class="setup-card"><div class="setup-distance">2000</div><div class="setup-unit">meters</div></div>
+      </div>
+      <button class="setup-btn">Next</button>
+    </div>
+  </div>
+
+  <!-- ===== RESULT ===== -->
+  <div class="page" id="page-result">
+    <div class="result-container">
+      <div class="result-hero">
+        <div class="result-trophy">&#127942;</div>
+        <div class="result-title">Race Complete</div>
+        <div class="result-meta">Target: 2000m</div>
+      </div>
+      <div class="result-list">
+        <div class="result-row winner">
+          <div class="result-row-rank rr-gold">1st</div>
+          <div class="result-row-name">Kim Minjun</div>
+          <div class="result-row-details"><span>2000m</span><span>245W avg</span><span>32 SPM</span></div>
+          <div class="result-row-time">4:12.3</div>
+        </div>
+        <div class="result-row">
+          <div class="result-row-rank rr-silver">2nd</div>
+          <div class="result-row-name">Lee Seojin</div>
+          <div class="result-row-details"><span>2000m</span><span>228W avg</span><span>30 SPM</span></div>
+          <div class="result-row-time">4:25.1</div>
+        </div>
+        <div class="result-row">
+          <div class="result-row-rank rr-bronze">3rd</div>
+          <div class="result-row-name">Park Jiwon</div>
+          <div class="result-row-details"><span>2000m</span><span>198W avg</span><span>28 SPM</span></div>
+          <div class="result-row-time">4:38.9</div>
+        </div>
+        <div class="result-row">
+          <div class="result-row-rank" style="color:var(--text-muted)">4th</div>
+          <div class="result-row-name">Choi Yuna</div>
+          <div class="result-row-details"><span>2000m</span><span>175W avg</span><span>26 SPM</span></div>
+          <div class="result-row-time">4:52.4</div>
+        </div>
+        <div class="result-row">
+          <div class="result-row-rank" style="color:var(--text-muted)">5th</div>
+          <div class="result-row-name">Jung Dohyun</div>
+          <div class="result-row-details"><span>2000m</span><span>162W avg</span><span>24 SPM</span></div>
+          <div class="result-row-time">5:01.7</div>
+        </div>
+        <div class="result-row">
+          <div class="result-row-rank" style="color:var(--text-muted)">6th</div>
+          <div class="result-row-name">Han Soyeon</div>
+          <div class="result-row-details"><span>2000m</span><span>148W avg</span><span>23 SPM</span></div>
+          <div class="result-row-time">5:18.2</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="page-nav">
+    <button class="active" onclick="showPage('race')">Race</button>
+    <button onclick="showPage('setup')">Setup</button>
+    <button onclick="showPage('result')">Result</button>
+  </div>
+</div>
+
+<script>
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.page-nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>
+
+</body>
+</html>

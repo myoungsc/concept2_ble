@@ -1,9 +1,12 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:screenshot/screenshot.dart';
 
 import '../providers/race_provider.dart';
 import '../services/screenshot_service.dart';
+import '../theme/app_theme.dart';
 import 'distance_setup_screen.dart';
 
 class ResultScreen extends ConsumerStatefulWidget {
@@ -20,7 +23,6 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
   @override
   void initState() {
     super.initState();
-    // Auto-capture after build
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _captureAndSave();
     });
@@ -32,12 +34,23 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
 
     try {
       await Future.delayed(const Duration(milliseconds: 500));
+
+      final permissionStatus =
+          await ScreenshotService.checkAndRequestPermission();
+      if (permissionStatus == PhotoPermissionStatus.denied) {
+        if (mounted) _showPermissionDeniedDialog();
+        return;
+      }
+
       await ScreenshotService.captureAndSave(_screenshotController);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('결과가 사진첩에 저장되었습니다'),
-            backgroundColor: Colors.green,
+          SnackBar(
+            content: Text(
+              'saved_to_gallery'.tr(),
+              style: OlympicTextStyles.body(),
+            ),
+            backgroundColor: OlympicColors.statusFinished,
           ),
         );
       }
@@ -45,12 +58,38 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('스크린샷 저장 실패: $e'),
-            backgroundColor: Colors.red,
+            content: Text(
+              'screenshot_failed'.tr(namedArgs: {'error': '$e'}),
+              style: OlympicTextStyles.body(),
+            ),
+            backgroundColor: OlympicColors.redOlympic,
           ),
         );
       }
     }
+  }
+
+  void _showPermissionDeniedDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('photo_permission_title'.tr()),
+        content: Text('photo_permission_message'.tr()),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('close'.tr()),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              openAppSettings();
+            },
+            child: Text('go_to_settings'.tr()),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -59,164 +98,28 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
     final sorted = raceState.sortedByFinish;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
-      appBar: AppBar(
-        title: const Text('레이스 결과'),
-        centerTitle: true,
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        automaticallyImplyLeading: false,
-      ),
       body: Screenshot(
         controller: _screenshotController,
         child: Container(
-          color: const Color(0xFFF5F5F5),
-          child: Column(
-            children: [
-              // Header
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(20),
-                margin: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Theme.of(context).colorScheme.primary,
-                      Theme.of(context).colorScheme.secondary,
-                    ],
+          color: OlympicColors.bgCharcoal,
+          child: SafeArea(
+            child: Column(
+              children: [
+                _buildBanner(raceState.config.targetDistanceMeters),
+                Expanded(
+                  child: ListView.separated(
+                    padding: const EdgeInsets.symmetric(horizontal: 32),
+                    itemCount: sorted.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 6),
+                    itemBuilder: (context, index) {
+                      final p = sorted[index];
+                      final rank = index + 1;
+                      return _buildResultEntry(p, rank);
+                    },
                   ),
-                  borderRadius: BorderRadius.circular(16),
                 ),
-                child: Column(
-                  children: [
-                    const Icon(Icons.emoji_events,
-                        size: 48, color: Colors.amber),
-                    const SizedBox(height: 8),
-                    const Text(
-                      '레이스 완료!',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '목표 거리: ${raceState.config.targetDistanceMeters}m',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        color: Colors.white70,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              // Results list
-              Expanded(
-                child: ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: sorted.length,
-                  itemBuilder: (context, index) {
-                    final p = sorted[index];
-                    final rank = index + 1;
-
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        side: rank == 1
-                            ? const BorderSide(
-                                color: Color(0xFFFFD700), width: 2)
-                            : BorderSide.none,
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Row(
-                          children: [
-                            // Rank medal
-                            Container(
-                              width: 48,
-                              height: 48,
-                              decoration: BoxDecoration(
-                                color: _rankColor(rank),
-                                shape: BoxShape.circle,
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: _rankColor(rank)
-                                        .withValues(alpha: 0.4),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                              child: Center(
-                                child: rank <= 3
-                                    ? const Icon(Icons.emoji_events,
-                                        color: Colors.white, size: 24)
-                                    : Text(
-                                        '$rank',
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 20,
-                                        ),
-                                      ),
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            // Participant info
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    p.name,
-                                    style: const TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    '거리: ${p.currentDistance.toStringAsFixed(0)}m',
-                                    style: TextStyle(
-                                      color: Colors.grey.shade600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            // Time & stats
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                Text(
-                                  _formatDuration(p.finishTime),
-                                  style: const TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
-                                    fontFamily: 'monospace',
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                if (p.latestData?.watts != null &&
-                                    p.latestData!.watts > 0)
-                                  Text(
-                                    '평균 ${p.latestData!.watts}W',
-                                    style: TextStyle(
-                                      color: Colors.grey.shade600,
-                                      fontSize: 13,
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -227,29 +130,158 @@ class _ResultScreenState extends ConsumerState<ResultScreen> {
             onPressed: _goHome,
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              textStyle: const TextStyle(fontSize: 18),
             ),
-            child: const Text('처음으로'),
+            child: Text('home'.tr().toUpperCase()),
           ),
         ),
       ),
     );
   }
 
-  Color _rankColor(int rank) {
+  Widget _buildBanner(int targetDistance) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 24),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Container(
+            width: 200,
+            height: 200,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: RadialGradient(
+                colors: [
+                  OlympicColors.goldMedal.withValues(alpha: 0.1),
+                  Colors.transparent,
+                ],
+              ),
+            ),
+          ),
+          Column(
+            children: [
+              const Icon(Icons.emoji_events,
+                  size: 44, color: OlympicColors.goldMedal),
+              const SizedBox(height: 8),
+              Text(
+                'race_complete'.tr().toUpperCase(),
+                style: OlympicTextStyles.headline(fontSize: 44),
+              ),
+              Text(
+                'target_distance'.tr(namedArgs: {
+                  'distance': '$targetDistance',
+                }),
+                style: OlympicTextStyles.body(
+                  fontSize: 14,
+                  color: OlympicColors.gray500,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildResultEntry(dynamic p, int rank) {
+    final isChampion = rank == 1;
+    final rankColor = AppTheme.rankColor(rank);
+
+    Color stripeColor;
     switch (rank) {
       case 1:
-        return const Color(0xFFFFD700);
+        stripeColor = OlympicColors.goldMedal;
+        break;
       case 2:
-        return const Color(0xFFC0C0C0);
+        stripeColor = OlympicColors.silverMedal;
+        break;
       case 3:
-        return const Color(0xFFCD7F32);
+        stripeColor = OlympicColors.bronzeMedal;
+        break;
       default:
-        return Colors.blueGrey;
+        stripeColor = OlympicColors.gray700;
     }
+
+    return Container(
+      decoration: BoxDecoration(
+        color: OlympicColors.bgCard,
+        borderRadius: BorderRadius.circular(6),
+        border: isChampion
+            ? Border.all(color: OlympicColors.goldMedal, width: 2)
+            : null,
+        boxShadow: isChampion
+            ? [
+                BoxShadow(
+                  color: OlympicColors.goldMedal.withValues(alpha: 0.1),
+                  blurRadius: 20,
+                )
+              ]
+            : null,
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Row(
+        children: [
+          Container(width: 5, height: 60, color: stripeColor),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 48,
+                    child: Text(
+                      '$rank${AppTheme.rankSuffix(rank)}',
+                      style: OlympicTextStyles.bigNumber(
+                        fontSize: 32,
+                        color: rankColor,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                  const SizedBox(width: 20),
+                  Expanded(
+                    child: Text(
+                      p.name.toUpperCase(),
+                      style: OlympicTextStyles.participantName(fontSize: 22),
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      Text(
+                        '${p.currentDistance.toStringAsFixed(0)}m',
+                        style: OlympicTextStyles.body(
+                          fontSize: 13,
+                          color: OlympicColors.gray500,
+                        ),
+                      ),
+                      const SizedBox(width: 24),
+                      if (p.latestData?.watts != null &&
+                          p.latestData!.watts > 0)
+                        Text(
+                          '${p.latestData!.watts}W avg',
+                          style: OlympicTextStyles.body(
+                            fontSize: 13,
+                            color: OlympicColors.gray500,
+                          ),
+                        ),
+                      const SizedBox(width: 24),
+                      Text(
+                        _formatDuration(p.finishTime),
+                        style: OlympicTextStyles.mono(
+                          fontSize: 24,
+                          color: isChampion
+                              ? OlympicColors.goldMedal
+                              : OlympicColors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   String _formatDuration(Duration? duration) {

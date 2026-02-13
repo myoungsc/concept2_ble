@@ -27,10 +27,11 @@ void main() {
 
   group('RacePhase', () {
     test('모든 레이스 단계가 정의되어 있다', () {
-      expect(RacePhase.values.length, 5);
+      expect(RacePhase.values.length, 6);
       expect(RacePhase.values, contains(RacePhase.setup));
       expect(RacePhase.values, contains(RacePhase.connecting));
-      expect(RacePhase.values, contains(RacePhase.ready));
+      expect(RacePhase.values, contains(RacePhase.warmup));
+      expect(RacePhase.values, contains(RacePhase.countdown));
       expect(RacePhase.values, contains(RacePhase.racing));
       expect(RacePhase.values, contains(RacePhase.finished));
     });

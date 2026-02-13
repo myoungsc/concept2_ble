@@ -1,8 +1,10 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/race_config.dart';
 import '../providers/race_provider.dart';
+import '../theme/app_theme.dart';
 import '../widgets/race_lane_widget.dart';
 import 'result_screen.dart';
 
@@ -13,26 +15,30 @@ class RaceScreen extends ConsumerStatefulWidget {
   ConsumerState<RaceScreen> createState() => _RaceScreenState();
 }
 
-class _RaceScreenState extends ConsumerState<RaceScreen> {
-  static const _laneColors = [
-    Color(0xFF2196F3), // Blue
-    Color(0xFFF44336), // Red
-    Color(0xFF4CAF50), // Green
-    Color(0xFFFF9800), // Orange
-    Color(0xFF9C27B0), // Purple
-    Color(0xFF00BCD4), // Cyan
-    Color(0xFFE91E63), // Pink
-    Color(0xFF795548), // Brown
-    Color(0xFF607D8B), // Blue Grey
-  ];
-
+class _RaceScreenState extends ConsumerState<RaceScreen>
+    with SingleTickerProviderStateMixin {
   bool _navigatedToResult = false;
+  late AnimationController _liveController;
+
+  @override
+  void initState() {
+    super.initState();
+    _liveController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 1),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _liveController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final raceState = ref.watch(raceProvider);
 
-    // Navigate to result screen when race finishes
     if (raceState.phase == RacePhase.finished && !_navigatedToResult) {
       _navigatedToResult = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -46,103 +52,241 @@ class _RaceScreenState extends ConsumerState<RaceScreen> {
     final elapsed = raceState.elapsed;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Top bar: target distance + elapsed time
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              color: Colors.white,
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: CustomPaint(painter: DiagonalStripePainter()),
+          ),
+          SafeArea(
+            child: Column(
+              children: [
+                _buildHeader(raceState, elapsed, sorted),
+                Expanded(
+                  child: ListView.separated(
+                    padding: const EdgeInsets.all(10),
+                    itemCount: sorted.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 6),
+                    itemBuilder: (context, index) {
+                      final participant = sorted[index];
+                      final originalIndex = raceState.participants
+                          .indexWhere((p) => p.id == participant.id);
+                      final color = AppTheme.laneColor(originalIndex);
+
+                      return SizedBox(
+                        height: _laneHeight(sorted.length, context),
+                        child: RaceLaneWidget(
+                          participant: participant,
+                          rank: index + 1,
+                          targetDistance:
+                              raceState.config.targetDistanceMeters,
+                          laneColor: color,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  double _laneHeight(int count, BuildContext context) {
+    final screenH = MediaQuery.of(context).size.height;
+    final available = screenH - 72 - MediaQuery.of(context).padding.top - 20;
+    final h = (available - (count - 1) * 6) / count;
+    return h.clamp(60.0, 120.0);
+  }
+
+  Widget _buildHeader(RaceState raceState, Duration elapsed,
+      List<dynamic> sorted) {
+    final finishedCount =
+        sorted.where((p) => p.isFinished).length;
+
+    return SizedBox(
+      height: 72,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          ClipPath(
+            clipper: AngleRightClipper(angle: 20),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              color: OlympicColors.redOlympic,
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.flag, color: Colors.red),
-                      const SizedBox(width: 8),
-                      Text(
-                        '목표: ${raceState.config.targetDistanceMeters}m',
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
+                  Text(
+                    'CONCEPT2',
+                    style: OlympicTextStyles.bigNumber(fontSize: 32),
                   ),
-                  Row(
-                    children: [
-                      const Icon(Icons.timer, color: Colors.blue),
-                      const SizedBox(width: 8),
-                      Text(
-                        _formatElapsed(elapsed),
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          fontFamily: 'monospace',
-                        ),
-                      ),
-                    ],
-                  ),
-                  // Finished count
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.green.shade50,
-                      borderRadius: BorderRadius.circular(20),
+                    width: 2,
+                    height: 28,
+                    margin: const EdgeInsets.symmetric(horizontal: 12),
+                    color: Colors.white.withValues(alpha: 0.4),
+                  ),
+                  Text(
+                    'race_display'.tr().toUpperCase(),
+                    style: OlympicTextStyles.label(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white.withValues(alpha: 0.9),
+                      letterSpacing: 4,
                     ),
-                    child: Text(
-                      '완주: ${sorted.where((p) => p.isFinished).length}/${sorted.length}',
-                      style: TextStyle(
-                        color: Colors.green.shade700,
-                        fontWeight: FontWeight.bold,
-                      ),
+                  ),
+                  const SizedBox(width: 20),
+                ],
+              ),
+            ),
+          ),
+          ClipPath(
+            clipper: ParallelogramClipper(angle: 20),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 40),
+              color: OlympicColors.blueOlympic,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'target'.tr().toUpperCase(),
+                    style: OlympicTextStyles.label(
+                      fontSize: 11,
+                      color: Colors.white.withValues(alpha: 0.5),
+                    ),
+                  ),
+                  RichText(
+                    text: TextSpan(
+                      children: [
+                        TextSpan(
+                          text:
+                              '${raceState.config.targetDistanceMeters}',
+                          style: OlympicTextStyles.bigNumber(fontSize: 36),
+                        ),
+                        TextSpan(
+                          text: 'M',
+                          style: OlympicTextStyles.label(
+                            fontSize: 18,
+                            color: Colors.white.withValues(alpha: 0.5),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
             ),
-            const Divider(height: 1),
-            // Race lanes
-            Expanded(
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 300),
-                child: ListView.builder(
-                  key: ValueKey(sorted.map((p) => p.id).join(',')),
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  itemCount: sorted.length,
-                  itemBuilder: (context, index) {
-                    final participant = sorted[index];
-                    final originalIndex = raceState.participants
-                        .indexWhere((p) => p.id == participant.id);
-                    final color =
-                        _laneColors[originalIndex % _laneColors.length];
-
-                    return AnimatedContainer(
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.easeInOut,
-                      child: RaceLaneWidget(
-                        participant: participant,
-                        rank: index + 1,
-                        targetDistance: raceState.config.targetDistanceMeters,
-                        laneColor: color,
-                      ),
-                    );
-                  },
-                ),
+          ),
+          Expanded(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _buildLiveIndicator(),
+                  const SizedBox(width: 16),
+                  RichText(
+                    text: TextSpan(
+                      children: [
+                        TextSpan(
+                          text: _formatTime(elapsed),
+                          style: OlympicTextStyles.mono(fontSize: 48),
+                        ),
+                        TextSpan(
+                          text: '.${_formatTenths(elapsed)}',
+                          style: OlympicTextStyles.mono(
+                            fontSize: 30,
+                            color:
+                                OlympicColors.white.withValues(alpha: 0.4),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
+          ),
+          ClipPath(
+            clipper: AngleLeftClipper(angle: 20),
+            child: Container(
+              padding: const EdgeInsets.only(left: 40, right: 24),
+              color: OlympicColors.bgCard,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('🏁', style: TextStyle(fontSize: 20)),
+                  const SizedBox(width: 10),
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        '$finishedCount / ${sorted.length}',
+                        style: OlympicTextStyles.bigNumber(fontSize: 28),
+                      ),
+                      Text(
+                        'finished'.tr().toUpperCase(),
+                        style: OlympicTextStyles.label(
+                          fontSize: 11,
+                          letterSpacing: 2,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  String _formatElapsed(Duration duration) {
+  Widget _buildLiveIndicator() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+      decoration: BoxDecoration(
+        color: OlympicColors.redOlympic,
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FadeTransition(
+            opacity: _liveController,
+            child: Container(
+              width: 8,
+              height: 8,
+              decoration: const BoxDecoration(
+                color: OlympicColors.white,
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            'live'.tr().toUpperCase(),
+            style: OlympicTextStyles.label(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+              color: OlympicColors.white,
+              letterSpacing: 3,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatTime(Duration duration) {
     final minutes = duration.inMinutes;
     final seconds = duration.inSeconds % 60;
-    final tenths = (duration.inMilliseconds % 1000) ~/ 100;
-    return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}.$tenths';
+    return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+  }
+
+  String _formatTenths(Duration duration) {
+    return '${(duration.inMilliseconds % 1000) ~/ 100}';
   }
 }

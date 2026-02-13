@@ -9,14 +9,15 @@ void main() {
       }
     });
 
-    test('라벨이 올바르다', () {
-      expect(BleConnectionState.disconnected.label, '연결 안됨');
-      expect(BleConnectionState.scanning.label, '스캔 중…');
-      expect(BleConnectionState.connecting.label, '연결 중…');
-      expect(BleConnectionState.connected.label, '연결 완료');
-      expect(BleConnectionState.subscribed.label, '데이터 수신 중');
-      expect(BleConnectionState.reconnecting.label, '연결 끊김 (재연결 중)');
-      expect(BleConnectionState.failed.label, '연결 실패');
+    test('라벨이 올바른 번역 키를 사용한다', () {
+      // 테스트 환경에서 .tr()은 키 자체를 반환
+      expect(BleConnectionState.disconnected.label, 'ble_disconnected');
+      expect(BleConnectionState.scanning.label, 'ble_scanning');
+      expect(BleConnectionState.connecting.label, 'ble_connecting');
+      expect(BleConnectionState.connected.label, 'ble_connected');
+      expect(BleConnectionState.subscribed.label, 'ble_subscribed');
+      expect(BleConnectionState.reconnecting.label, 'ble_reconnecting');
+      expect(BleConnectionState.failed.label, 'ble_failed');
     });
 
     test('isActive가 connected와 subscribed에서만 true이다', () {

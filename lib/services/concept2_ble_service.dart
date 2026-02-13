@@ -10,10 +10,13 @@ import '../utils/concept2_constants.dart';
 
 class Concept2BleService {
   final Map<String, StreamSubscription> _connectionSubscriptions = {};
-  final Map<String, StreamSubscription> _dataSubscriptions = {};
+  final Map<String, List<StreamSubscription>> _charSubscriptions = {};
   final Map<String, Timer> _reconnectTimers = {};
   final Map<String, Timer> _dataTimeoutTimers = {};
   final Map<String, int> _reconnectAttempts = {};
+  final Map<String, BluetoothDevice> _devices = {};
+
+  bool _raceMode = false;
 
   final _connectionStateController =
       StreamController<MapEntry<String, BleConnectionState>>.broadcast();
@@ -25,10 +28,26 @@ class Concept2BleService {
   Stream<MapEntry<String, RowingData>> get rowingDataStream =>
       _rowingDataController.stream;
 
+  void setRaceMode(bool active) {
+    _raceMode = active;
+    if (active) {
+      for (final device in _devices.values) {
+        _requestHighPriority(device);
+      }
+    }
+  }
+
+  Future<void> _requestHighPriority(BluetoothDevice device) async {
+    try {
+      await device.requestConnectionPriority(
+        connectionPriorityRequest: ConnectionPriority.high,
+      );
+    } catch (_) {}
+  }
+
   Future<void> startScan({Duration timeout = const Duration(seconds: 10)}) async {
     await FlutterBluePlus.startScan(
       timeout: timeout,
-      withServices: [Concept2Constants.rowingService],
     );
   }
 
@@ -41,6 +60,7 @@ class Concept2BleService {
 
   Future<void> connectDevice(BluetoothDevice device) async {
     final deviceId = device.remoteId.str;
+    _devices[deviceId] = device;
     _reconnectAttempts[deviceId] = 0;
 
     _emitState(deviceId, BleConnectionState.connecting);
@@ -59,11 +79,16 @@ class Concept2BleService {
       await _subscribeToCharacteristics(device);
     } catch (e) {
       _emitState(deviceId, BleConnectionState.failed);
+      if (_raceMode) {
+        _scheduleReconnect(device, 0);
+      }
     }
   }
 
   Future<void> _subscribeToCharacteristics(BluetoothDevice device) async {
     final deviceId = device.remoteId.str;
+
+    _cancelCharSubscriptions(deviceId);
 
     try {
       final services = await device.discoverServices();
@@ -72,14 +97,12 @@ class Concept2BleService {
         orElse: () => throw Exception('Rowing service not found'),
       );
 
-      // Subscribe to General Status
       final generalStatus = rowingService.characteristics.firstWhere(
         (c) => c.characteristicUuid == Concept2Constants.generalStatusChar,
         orElse: () => throw Exception('General status char not found'),
       );
       await generalStatus.setNotifyValue(true);
 
-      // Optionally subscribe to Additional Status 1
       BluetoothCharacteristic? additionalStatus1;
       try {
         additionalStatus1 = rowingService.characteristics.firstWhere(
@@ -88,7 +111,6 @@ class Concept2BleService {
         await additionalStatus1.setNotifyValue(true);
       } catch (_) {}
 
-      // Optionally subscribe to Additional Status 2
       BluetoothCharacteristic? additionalStatus2;
       try {
         additionalStatus2 = rowingService.characteristics.firstWhere(
@@ -100,24 +122,34 @@ class Concept2BleService {
       _emitState(deviceId, BleConnectionState.subscribed);
       _reconnectAttempts[deviceId] = 0;
 
-      // Listen to data from characteristics
-      generalStatus.onValueReceived.listen((value) {
+      final subs = <StreamSubscription>[];
+
+      subs.add(generalStatus.onValueReceived.listen((value) {
         _handleGeneralStatus(deviceId, value);
         _resetDataTimeout(device);
-      });
+      }));
 
-      additionalStatus1?.onValueReceived.listen((value) {
-        _handleAdditionalStatus1(deviceId, value);
-      });
+      if (additionalStatus1 != null) {
+        subs.add(additionalStatus1.onValueReceived.listen((value) {
+          _handleAdditionalStatus1(deviceId, value);
+        }));
+      }
 
-      additionalStatus2?.onValueReceived.listen((value) {
-        _handleAdditionalStatus2(deviceId, value);
-      });
+      if (additionalStatus2 != null) {
+        subs.add(additionalStatus2.onValueReceived.listen((value) {
+          _handleAdditionalStatus2(deviceId, value);
+        }));
+      }
+
+      _charSubscriptions[deviceId] = subs;
+
+      if (_raceMode) {
+        await _requestHighPriority(device);
+      }
 
       _startDataTimeout(device);
     } catch (e) {
       _emitState(deviceId, BleConnectionState.connected);
-      // Retry subscription after delay
       Future.delayed(const Duration(seconds: 2), () {
         if (_connectionSubscriptions.containsKey(deviceId)) {
           _subscribeToCharacteristics(device);
@@ -126,7 +158,15 @@ class Concept2BleService {
     }
   }
 
-  // Accumulated data per device for merging characteristics
+  void _cancelCharSubscriptions(String deviceId) {
+    final subs = _charSubscriptions.remove(deviceId);
+    if (subs != null) {
+      for (final sub in subs) {
+        sub.cancel();
+      }
+    }
+  }
+
   final Map<String, RowingData> _latestData = {};
 
   void _handleGeneralStatus(String deviceId, List<int> value) {
@@ -134,9 +174,9 @@ class Concept2BleService {
 
     final bytes = Uint8List.fromList(value);
     final elapsedTimeCs =
-        bytes[0] | (bytes[1] << 8) | (bytes[2] << 16); // 0.01s
+        bytes[0] | (bytes[1] << 8) | (bytes[2] << 16);
     final distanceTenths =
-        bytes[3] | (bytes[4] << 8) | (bytes[5] << 16); // 0.1m
+        bytes[3] | (bytes[4] << 8) | (bytes[5] << 16);
     final strokeRate = bytes[10];
 
     final data = (_latestData[deviceId] ?? RowingData(timestamp: DateTime.now()))
@@ -157,7 +197,7 @@ class Concept2BleService {
     final bytes = Uint8List.fromList(value);
     final strokeRate = bytes[5];
     final heartRate = bytes[6];
-    final currentPaceCs = bytes[7] | (bytes[8] << 8); // 0.01s per 500m
+    final currentPaceCs = bytes[7] | (bytes[8] << 8);
 
     final data = (_latestData[deviceId] ?? RowingData(timestamp: DateTime.now()))
         .copyWith(
@@ -175,7 +215,7 @@ class Concept2BleService {
     if (value.length < 6) return;
 
     final bytes = Uint8List.fromList(value);
-    final avgPower = bytes[4] | (bytes[5] << 8); // watts
+    final avgPower = bytes[4] | (bytes[5] << 8);
 
     final data = (_latestData[deviceId] ?? RowingData(timestamp: DateTime.now()))
         .copyWith(
@@ -189,14 +229,23 @@ class Concept2BleService {
 
   void _handleDisconnection(BluetoothDevice device) {
     final deviceId = device.remoteId.str;
+
+    _cancelCharSubscriptions(deviceId);
+    _dataTimeoutTimers[deviceId]?.cancel();
+
     final attempts = _reconnectAttempts[deviceId] ?? 0;
 
-    if (attempts >= _maxTotalAttempts()) {
+    if (!_raceMode && attempts >= _maxTotalAttempts()) {
       _emitState(deviceId, BleConnectionState.failed);
       return;
     }
 
     _emitState(deviceId, BleConnectionState.reconnecting);
+    _scheduleReconnect(device, attempts);
+  }
+
+  void _scheduleReconnect(BluetoothDevice device, int attempts) {
+    final deviceId = device.remoteId.str;
     _reconnectAttempts[deviceId] = attempts + 1;
 
     final delay = _getReconnectDelay(attempts);
@@ -207,6 +256,12 @@ class Concept2BleService {
   }
 
   Duration _getReconnectDelay(int attempt) {
+    if (_raceMode) {
+      if (attempt < 3) return const Duration(milliseconds: 300);
+      if (attempt < 6) return const Duration(seconds: 1);
+      return const Duration(seconds: 2);
+    }
+
     if (attempt < Concept2Constants.maxImmediateRetries) {
       return const Duration(milliseconds: 500);
     }
@@ -218,14 +273,19 @@ class Concept2BleService {
   }
 
   int _maxTotalAttempts() {
-    // ~60 seconds worth of attempts
     return Concept2Constants.maxImmediateRetries + 6;
   }
 
   Future<void> _attemptReconnect(BluetoothDevice device) async {
     final deviceId = device.remoteId.str;
+
+    if (!_devices.containsKey(deviceId)) return;
+
     try {
-      await device.connect(autoConnect: false, timeout: const Duration(seconds: 10));
+      await device.connect(
+        autoConnect: false,
+        timeout: Duration(seconds: _raceMode ? 8 : 10),
+      );
       _emitState(deviceId, BleConnectionState.connected);
       await _subscribeToCharacteristics(device);
     } catch (_) {
@@ -237,7 +297,9 @@ class Concept2BleService {
     final deviceId = device.remoteId.str;
     _dataTimeoutTimers[deviceId]?.cancel();
     _dataTimeoutTimers[deviceId] = Timer(
-      Concept2Constants.dataTimeoutDuration,
+      _raceMode
+          ? Concept2Constants.raceDataTimeoutDuration
+          : Concept2Constants.dataTimeoutDuration,
       () => _handleDataTimeout(device),
     );
   }
@@ -247,7 +309,7 @@ class Concept2BleService {
   }
 
   void _handleDataTimeout(BluetoothDevice device) {
-    // If connected but no data, try resubscribing
+    _cancelCharSubscriptions(device.remoteId.str);
     _subscribeToCharacteristics(device);
   }
 
@@ -263,14 +325,14 @@ class Concept2BleService {
   void _cleanup(String deviceId) {
     _connectionSubscriptions[deviceId]?.cancel();
     _connectionSubscriptions.remove(deviceId);
-    _dataSubscriptions[deviceId]?.cancel();
-    _dataSubscriptions.remove(deviceId);
+    _cancelCharSubscriptions(deviceId);
     _reconnectTimers[deviceId]?.cancel();
     _reconnectTimers.remove(deviceId);
     _dataTimeoutTimers[deviceId]?.cancel();
     _dataTimeoutTimers.remove(deviceId);
     _reconnectAttempts.remove(deviceId);
     _latestData.remove(deviceId);
+    _devices.remove(deviceId);
   }
 
   void _emitState(String deviceId, BleConnectionState state) {
@@ -278,14 +340,13 @@ class Concept2BleService {
   }
 
   void dispose() {
-    for (final id in _connectionSubscriptions.keys.toList()) {
+    for (final id in _devices.keys.toList()) {
       _cleanup(id);
     }
     _connectionStateController.close();
     _rowingDataController.close();
   }
 
-  // Static utility for parsing rowing data (for testing)
   static RowingData parseGeneralStatus(List<int> value) {
     if (value.length < 19) {
       return RowingData(timestamp: DateTime.now());
@@ -303,4 +364,3 @@ class Concept2BleService {
     );
   }
 }
-

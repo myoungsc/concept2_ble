@@ -20,7 +20,11 @@ void main() {
       expect(Concept2Constants.maxReconnectTimeSeconds, 60);
       expect(
         Concept2Constants.dataTimeoutDuration,
-        const Duration(seconds: 3),
+        const Duration(seconds: 5),
+      );
+      expect(
+        Concept2Constants.raceDataTimeoutDuration,
+        const Duration(seconds: 8),
       );
     });
   });

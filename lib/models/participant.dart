@@ -12,6 +12,7 @@ class Participant {
   final RowingData? latestData;
   final bool isFinished;
   final Duration? finishTime;
+  final Duration? machineFinishTime;
   final int reconnectAttempts;
 
   const Participant({
@@ -23,6 +24,7 @@ class Participant {
     this.latestData,
     this.isFinished = false,
     this.finishTime,
+    this.machineFinishTime,
     this.reconnectAttempts = 0,
   });
 
@@ -36,6 +38,7 @@ class Participant {
     RowingData? latestData,
     bool? isFinished,
     Duration? finishTime,
+    Duration? machineFinishTime,
     int? reconnectAttempts,
   }) {
     return Participant(
@@ -47,6 +50,7 @@ class Participant {
       latestData: latestData ?? this.latestData,
       isFinished: isFinished ?? this.isFinished,
       finishTime: finishTime ?? this.finishTime,
+      machineFinishTime: machineFinishTime ?? this.machineFinishTime,
       reconnectAttempts: reconnectAttempts ?? this.reconnectAttempts,
     );
   }

@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1280, initial-scale=1.0">
+<title>Concept 1: Dark Stadium - Concept2 Race</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Exo+2:wght@300;400;500;600;700;800&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg-deep: #0a0e1a;
+    --bg-panel: #111827;
+    --bg-lane: #1a2236;
+    --neon-cyan: #00f0ff;
+    --neon-magenta: #ff0066;
+    --neon-green: #00ff88;
+    --neon-amber: #ffaa00;
+    --neon-purple: #a855f7;
+    --text-primary: #f0f4ff;
+    --text-secondary: #7b8ba8;
+    --border-glow: rgba(0, 240, 255, 0.15);
+    --lane-1: #00f0ff;
+    --lane-2: #ff0066;
+    --lane-3: #00ff88;
+    --lane-4: #ffaa00;
+    --lane-5: #a855f7;
+    --lane-6: #ff6b35;
+  }
+
+  body {
+    background: var(--bg-deep);
+    color: var(--text-primary);
+    font-family: 'Exo 2', sans-serif;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+  }
+
+  /* ===== Background Effects ===== */
+  .bg-grid {
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,240,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,240,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .bg-radial {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at 50% 0%, rgba(0,240,255,0.08) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .scanline {
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,240,255,0.015) 2px,
+      rgba(0,240,255,0.015) 4px
+    );
+    pointer-events: none;
+    z-index: 100;
+  }
+
+  /* ===== App Layout ===== */
+  .app {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ===== Header ===== */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 28px;
+    background: linear-gradient(180deg, rgba(17,24,39,0.98) 0%, rgba(17,24,39,0.85) 100%);
+    border-bottom: 1px solid var(--border-glow);
+    position: relative;
+  }
+
+  .header::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--neon-cyan), transparent);
+    opacity: 0.6;
+  }
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .logo-mark {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .logo-icon {
+    width: 36px;
+    height: 36px;
+    border: 2px solid var(--neon-cyan);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Orbitron', monospace;
+    font-weight: 900;
+    font-size: 14px;
+    color: var(--neon-cyan);
+    text-shadow: 0 0 10px rgba(0,240,255,0.5);
+    box-shadow: 0 0 15px rgba(0,240,255,0.15), inset 0 0 10px rgba(0,240,255,0.05);
+  }
+
+  .logo-text {
+    font-family: 'Orbitron', monospace;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    color: var(--text-primary);
+    text-transform: uppercase;
+  }
+
+  .logo-sub {
+    font-size: 9px;
+    letter-spacing: 4px;
+    color: var(--neon-cyan);
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+
+  .target-badge {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(0,240,255,0.08);
+    border: 1px solid rgba(0,240,255,0.2);
+    border-radius: 8px;
+    padding: 8px 18px;
+  }
+
+  .target-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--text-secondary);
+    font-weight: 600;
+  }
+
+  .target-value {
+    font-family: 'Orbitron', monospace;
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--neon-cyan);
+    text-shadow: 0 0 20px rgba(0,240,255,0.4);
+  }
+
+  .header-center {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .timer-display {
+    font-family: 'Orbitron', monospace;
+    font-size: 42px;
+    font-weight: 800;
+    letter-spacing: 3px;
+    color: var(--text-primary);
+    text-shadow: 0 0 30px rgba(0,240,255,0.3);
+    position: relative;
+  }
+
+  .timer-display .ms {
+    font-size: 26px;
+    opacity: 0.6;
+  }
+
+  .live-dot {
+    width: 10px;
+    height: 10px;
+    background: var(--neon-magenta);
+    border-radius: 50%;
+    box-shadow: 0 0 10px var(--neon-magenta);
+    animation: pulse-dot 1s ease-in-out infinite;
+  }
+
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+  }
+
+  .live-text {
+    font-family: 'Orbitron', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--neon-magenta);
+    letter-spacing: 3px;
+    text-shadow: 0 0 10px rgba(255,0,102,0.5);
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .finish-count {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0,255,136,0.08);
+    border: 1px solid rgba(0,255,136,0.2);
+    border-radius: 8px;
+    padding: 8px 14px;
+  }
+
+  .finish-icon {
+    font-size: 18px;
+  }
+
+  .finish-text {
+    font-family: 'Orbitron', monospace;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--neon-green);
+  }
+
+  /* ===== Lane Area ===== */
+  .lanes-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 12px 20px;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  .lane {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    background: var(--bg-lane);
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.04);
+    padding: 0 16px;
+    gap: 16px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    min-height: 0;
+  }
+
+  .lane:hover {
+    border-color: rgba(255,255,255,0.08);
+    background: #1d2640;
+  }
+
+  .lane.finished {
+    border-color: rgba(0,255,136,0.3);
+    background: linear-gradient(90deg, rgba(0,255,136,0.06) 0%, var(--bg-lane) 40%);
+  }
+
+  .lane.first-place {
+    border-color: rgba(0,240,255,0.4);
+    box-shadow: 0 0 20px rgba(0,240,255,0.08), inset 0 0 30px rgba(0,240,255,0.03);
+  }
+
+  /* Rank */
+  .rank {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Orbitron', monospace;
+    font-size: 20px;
+    font-weight: 900;
+    flex-shrink: 0;
+    position: relative;
+  }
+
+  .rank-1 {
+    background: linear-gradient(135deg, #ffd700 0%, #ffaa00 100%);
+    color: #1a1400;
+    box-shadow: 0 0 20px rgba(255,215,0,0.3);
+  }
+
+  .rank-2 {
+    background: linear-gradient(135deg, #c0c0c0 0%, #8a8a8a 100%);
+    color: #1a1a1a;
+  }
+
+  .rank-3 {
+    background: linear-gradient(135deg, #cd7f32 0%, #a0622a 100%);
+    color: #1a1000;
+  }
+
+  .rank-4, .rank-5, .rank-6 {
+    background: rgba(255,255,255,0.06);
+    color: var(--text-secondary);
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+
+  /* Name */
+  .participant-info {
+    width: 140px;
+    flex-shrink: 0;
+  }
+
+  .participant-name {
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .participant-status {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    font-weight: 600;
+    margin-top: 2px;
+  }
+
+  .status-rowing { color: var(--neon-cyan); }
+  .status-finished { color: var(--neon-green); }
+
+  /* Track */
+  .track-area {
+    flex: 1;
+    height: 36px;
+    position: relative;
+    background: rgba(0,0,0,0.3);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+
+  .track-markers {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    justify-content: space-between;
+    padding: 0 1px;
+  }
+
+  .track-marker {
+    width: 1px;
+    height: 100%;
+    background: rgba(255,255,255,0.05);
+  }
+
+  .track-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    border-radius: 6px;
+    transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 2px;
+  }
+
+  .track-fill::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: white;
+    border-radius: 0 6px 6px 0;
+    box-shadow: 0 0 12px currentColor;
+  }
+
+  .lane-color-1 .track-fill { background: linear-gradient(90deg, rgba(0,240,255,0.1), rgba(0,240,255,0.5)); color: var(--lane-1); }
+  .lane-color-2 .track-fill { background: linear-gradient(90deg, rgba(255,0,102,0.1), rgba(255,0,102,0.5)); color: var(--lane-2); }
+  .lane-color-3 .track-fill { background: linear-gradient(90deg, rgba(0,255,136,0.1), rgba(0,255,136,0.5)); color: var(--lane-3); }
+  .lane-color-4 .track-fill { background: linear-gradient(90deg, rgba(255,170,0,0.1), rgba(255,170,0,0.5)); color: var(--lane-4); }
+  .lane-color-5 .track-fill { background: linear-gradient(90deg, rgba(168,85,247,0.1), rgba(168,85,247,0.5)); color: var(--lane-5); }
+  .lane-color-6 .track-fill { background: linear-gradient(90deg, rgba(255,107,53,0.1), rgba(255,107,53,0.5)); color: var(--lane-6); }
+
+  /* Stats */
+  .stats-group {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-shrink: 0;
+    width: 360px;
+    justify-content: flex-end;
+  }
+
+  .stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+  }
+
+  .stat-label {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--text-secondary);
+    font-weight: 600;
+  }
+
+  .stat-value {
+    font-family: 'Orbitron', monospace;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  .stat-value.distance {
+    font-size: 22px;
+    font-weight: 800;
+  }
+
+  .stat-value.time {
+    color: rgba(255,255,255,0.6);
+    font-size: 15px;
+  }
+
+  .stat-unit {
+    font-size: 11px;
+    color: var(--text-secondary);
+    font-weight: 500;
+    margin-left: 2px;
+  }
+
+  /* ===== Distance Setup Screen ===== */
+  .screen-title {
+    text-align: center;
+    padding: 60px 0 20px;
+  }
+
+  .screen-title h1 {
+    font-family: 'Orbitron', monospace;
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--text-primary);
+    text-shadow: 0 0 30px rgba(0,240,255,0.2);
+  }
+
+  .screen-title p {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-top: 8px;
+    letter-spacing: 1px;
+  }
+
+  .preset-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    max-width: 700px;
+    margin: 40px auto;
+    padding: 0 20px;
+  }
+
+  .preset-btn {
+    background: var(--bg-lane);
+    border: 2px solid rgba(0,240,255,0.15);
+    border-radius: 14px;
+    padding: 28px 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+  }
+
+  .preset-btn:hover {
+    border-color: var(--neon-cyan);
+    box-shadow: 0 0 30px rgba(0,240,255,0.15);
+    transform: translateY(-2px);
+  }
+
+  .preset-btn.active {
+    border-color: var(--neon-cyan);
+    background: rgba(0,240,255,0.1);
+    box-shadow: 0 0 30px rgba(0,240,255,0.2), inset 0 0 20px rgba(0,240,255,0.05);
+  }
+
+  .preset-distance {
+    font-family: 'Orbitron', monospace;
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--text-primary);
+  }
+
+  .preset-unit {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .next-btn {
+    display: block;
+    max-width: 700px;
+    margin: 20px auto;
+    padding: 16px 60px;
+    background: linear-gradient(135deg, var(--neon-cyan), #0088cc);
+    border: none;
+    border-radius: 10px;
+    font-family: 'Orbitron', monospace;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #001a22;
+    cursor: pointer;
+    box-shadow: 0 0 30px rgba(0,240,255,0.3);
+    transition: all 0.2s;
+    width: 100%;
+  }
+
+  .next-btn:hover {
+    box-shadow: 0 0 50px rgba(0,240,255,0.5);
+    transform: translateY(-1px);
+  }
+
+  /* ===== Result Screen ===== */
+  .result-header {
+    text-align: center;
+    padding: 30px 0 20px;
+    position: relative;
+  }
+
+  .result-header h1 {
+    font-family: 'Orbitron', monospace;
+    font-size: 36px;
+    font-weight: 900;
+    letter-spacing: 6px;
+    text-transform: uppercase;
+    background: linear-gradient(135deg, #ffd700, #ff8c00);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: none;
+  }
+
+  .result-cards {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .result-card {
+    display: flex;
+    align-items: center;
+    background: var(--bg-lane);
+    border-radius: 12px;
+    padding: 18px 24px;
+    gap: 20px;
+    border: 1px solid rgba(255,255,255,0.04);
+  }
+
+  .result-card.winner {
+    border-color: rgba(255,215,0,0.4);
+    background: linear-gradient(90deg, rgba(255,215,0,0.08) 0%, var(--bg-lane) 50%);
+    box-shadow: 0 0 20px rgba(255,215,0,0.1);
+  }
+
+  .result-rank {
+    font-family: 'Orbitron', monospace;
+    font-size: 28px;
+    font-weight: 900;
+    width: 50px;
+    text-align: center;
+  }
+
+  .result-rank.gold { color: #ffd700; text-shadow: 0 0 15px rgba(255,215,0,0.5); }
+  .result-rank.silver { color: #c0c0c0; }
+  .result-rank.bronze { color: #cd7f32; }
+
+  .result-name {
+    flex: 1;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+
+  .result-time {
+    font-family: 'Orbitron', monospace;
+    font-size: 24px;
+    font-weight: 700;
+  }
+
+  .result-stats {
+    display: flex;
+    gap: 20px;
+    color: var(--text-secondary);
+    font-size: 13px;
+  }
+
+  /* ===== Page Nav ===== */
+  .page-nav {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    padding: 20px;
+    background: var(--bg-panel);
+    border-top: 1px solid var(--border-glow);
+  }
+
+  .page-nav button {
+    background: rgba(0,240,255,0.08);
+    border: 1px solid rgba(0,240,255,0.2);
+    border-radius: 8px;
+    padding: 10px 24px;
+    color: var(--neon-cyan);
+    font-family: 'Exo 2', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .page-nav button:hover {
+    background: rgba(0,240,255,0.15);
+  }
+
+  .page-nav button.active {
+    background: var(--neon-cyan);
+    color: #001a22;
+  }
+
+  .page { display: none; flex-direction: column; height: 100%; }
+  .page.active { display: flex; }
+
+  /* Animations */
+  @keyframes slide-in {
+    from { opacity: 0; transform: translateX(-20px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .lane {
+    animation: slide-in 0.4s ease-out backwards;
+  }
+  .lane:nth-child(1) { animation-delay: 0.05s; }
+  .lane:nth-child(2) { animation-delay: 0.1s; }
+  .lane:nth-child(3) { animation-delay: 0.15s; }
+  .lane:nth-child(4) { animation-delay: 0.2s; }
+  .lane:nth-child(5) { animation-delay: 0.25s; }
+  .lane:nth-child(6) { animation-delay: 0.3s; }
+</style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="bg-radial"></div>
+<div class="scanline"></div>
+
+<div class="app">
+
+  <!-- ===== RACE SCREEN ===== -->
+  <div class="page active" id="page-race">
+    <div class="header">
+      <div class="header-left">
+        <div class="logo-mark">
+          <div class="logo-icon">C2</div>
+          <div>
+            <div class="logo-text">Concept2</div>
+            <div class="logo-sub">Race Display</div>
+          </div>
+        </div>
+        <div class="target-badge">
+          <div>
+            <div class="target-label">Target</div>
+            <div class="target-value">2000<span class="stat-unit">m</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="header-center">
+        <div class="live-dot"></div>
+        <div class="live-text">LIVE</div>
+        <div class="timer-display">04:32<span class="ms">.7</span></div>
+      </div>
+
+      <div class="header-right">
+        <div class="finish-count">
+          <span class="finish-icon">&#9872;</span>
+          <span class="finish-text">2 / 6</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="lanes-container">
+      <!-- Lane 1 - Finished -->
+      <div class="lane first-place finished lane-color-1">
+        <div class="rank rank-1">1</div>
+        <div class="participant-info">
+          <div class="participant-name">Kim Minjun</div>
+          <div class="participant-status status-finished">FINISHED</div>
+        </div>
+        <div class="track-area">
+          <div class="track-markers"><div class="track-marker"></div><div class="track-marker"></div><div class="track-marker"></div><div class="track-marker"></div><div class="track-marker"></div><div class="track-marker"></div><div class="track-marker"></div><div class="track-marker"></div><div class="track-marker"></div></div>
+          <div class="track-fill" style="width:100%"></div>
+        </div>
+        <div class="stats-group">
+          <div class="stat"><div class="stat-label">Dist</div><div class="stat-value distance">2000<span class="stat-unit">m</span></div></div>
+          <div class="stat"><div class="stat-label">SPM</div><div class="stat-value">32</div></div>
+          <div class="stat"><div class="stat-label">Watts</div><div class="stat-value">245</div></div>
+          <div class="stat"><div class="stat-label">Time</div><div class="stat-value time">4:12.3</div></div>
+        </div>
+      </div>
+
+      <!-- Lane 2 - Finished -->
+      <div class="lane finished lane-color-2">
+        <div class="rank rank-2">2</div>
+        <div class="participant-info">
+          <div class="participant-name">Lee Seojin</div>
+          <div class="participant-status status-finished">FINISHED</div>
+        </div>
+        <div class="track-area">
+          <div class="track-markers"><div class="track-marker"></div><div class="track-marker"></div><div class="track-marker"></div><div class="track-marker"></div><div class="track-marker"></div><div class="track-marker"></div><div class="track-marker"></div><div class="track-marker"></div><div class="track-marker"></div></div>
+          <div class="track-fill" style="width:100%"></div>
+        </div>
+        <div class="stats-group">
+          <div class="stat"><div class="stat-label">Dist</div><div class="stat-value distance">2000<span class="stat-unit">m</span></div></div>
+          <div class="stat"><div class="stat-label">SPM</div><div class="stat-value">30</div></div>
+          <div class="stat"><div class="stat-label">Watts</div><div class="stat-value">228</div></div>
+          <div class="stat"><div class="stat-label">Time</div><div class="stat-value time">4:25.1</div></div>
+        </div>
+      </div>
+
+      <!-- Lane 3 -->
+      <div class="lane lane-color-3">
+        <div class="rank rank-3">3</div>
+        <div class="participant-info">
+          <div class="participant-name">Park Jiwon</div>
+          <div class="participant-status status-rowing">ROWING</div>
+        </div>
+        <div class="track-area">
+          <div class="track-markers"><div class="track-marker"></div><div class="track-marker"></div><div class="track-marker"></div><div class="track-marker"></div><div class="track-marker"></div><div class="track-marker"></div><div class="track-marker"></div><div class="track-marker"></div><div class="track-marker"></div></div>
+          <div class="track-fill" style="width:87%"></div>
+        </div>
+        <div class="stats-group">
+          <div class="stat"><div class="stat-label">Dist</div><div class="stat-value distance">1742<span class="stat-unit">m</span></div></div>
+          <div class="stat"><div class="stat-label">SPM</div><div class="stat-value">28</div></div>
+          <div class="stat"><div class="stat-label">Watts</div><div class="stat-value">198</div></div>
+          <div class="stat"><div class="stat-label">Time</div><div class="stat-value time">4:32.7</div></div>
+        </div>
+      </div>
+
+      <!-- Lane 4 -->
+      <div class="lane lane-color-4">
+        <div class="rank rank-4">4</div>
+        <div class="participant-info">
+          <div class="participant-name">Choi Yuna</div>
+          <div class="participant-status status-rowing">ROWING</div>
+        </div>
+        <div class="track-area">
+          <div class="track-markers"><div class="track-marker"></div><div class="track-marker"></div><div class="track-marker"></div><div class="track-marker"></div><div class="track-marker"></div><div class="track-marker"></div><div class="track-marker"></div><div class="track-marker"></div><div class="track-marker"></div></div>
+          <div class="track-fill" style="width:79%"></div>
+        </div>
+        <div class="stats-group">
+          <div class="stat"><div class="stat-label">Dist</div><div class="stat-value distance">1583<span class="stat-unit">m</span></div></div>
+          <div class="stat"><div class="stat-label">SPM</div><div class="stat-value">26</div></div>
+          <div class="stat"><div class="stat-label">Watts</div><div class="stat-value">175</div></div>
+          <div class="stat"><div class="stat-label">Time</div><div class="stat-value time">4:32.7</div></div>
+        </div>
+      </div>
+
+      <!-- Lane 5 -->
+      <div class="lane lane-color-5">
+        <div class="rank rank-5">5</div>
+        <div class="participant-info">
+          <div class="participant-name">Jung Dohyun</div>
+          <div class="participant-status status-rowing">ROWING</div>
+        </div>
+        <div class="track-area">
+          <div class="track-markers"><div class="track-marker"></div><div class="track-marker"></div><div class="track-marker"></div><div class="track-marker"></div><div class="track-marker"></div><div class="track-marker"></div><div class="track-marker"></div><div class="track-marker"></div><div class="track-marker"></div></div>
+          <div class="track-fill" style="width:72%"></div>
+        </div>
+        <div class="stats-group">
+          <div class="stat"><div class="stat-label">Dist</div><div class="stat-value distance">1440<span class="stat-unit">m</span></div></div>
+          <div class="stat"><div class="stat-label">SPM</div><div class="stat-value">24</div></div>
+          <div class="stat"><div class="stat-label">Watts</div><div class="stat-value">162</div></div>
+          <div class="stat"><div class="stat-label">Time</div><div class="stat-value time">4:32.7</div></div>
+        </div>
+      </div>
+
+      <!-- Lane 6 -->
+      <div class="lane lane-color-6">
+        <div class="rank rank-6">6</div>
+        <div class="participant-info">
+          <div class="participant-name">Han Soyeon</div>
+          <div class="participant-status status-rowing">ROWING</div>
+        </div>
+        <div class="track-area">
+          <div class="track-markers"><div class="track-marker"></div><div class="track-marker"></div><div class="track-marker"></div><div class="track-marker"></div><div class="track-marker"></div><div class="track-marker"></div><div class="track-marker"></div><div class="track-marker"></div><div class="track-marker"></div></div>
+          <div class="track-fill" style="width:64%"></div>
+        </div>
+        <div class="stats-group">
+          <div class="stat"><div class="stat-label">Dist</div><div class="stat-value distance">1285<span class="stat-unit">m</span></div></div>
+          <div class="stat"><div class="stat-label">SPM</div><div class="stat-value">23</div></div>
+          <div class="stat"><div class="stat-label">Watts</div><div class="stat-value">148</div></div>
+          <div class="stat"><div class="stat-label">Time</div><div class="stat-value time">4:32.7</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== DISTANCE SETUP SCREEN ===== -->
+  <div class="page" id="page-setup">
+    <div style="flex:1; display:flex; flex-direction:column; justify-content:center;">
+      <div class="screen-title">
+        <h1>Race Distance</h1>
+        <p>Select target distance for the race</p>
+      </div>
+      <div class="preset-grid">
+        <div class="preset-btn">
+          <div class="preset-distance">200</div>
+          <div class="preset-unit">meters</div>
+        </div>
+        <div class="preset-btn">
+          <div class="preset-distance">500</div>
+          <div class="preset-unit">meters</div>
+        </div>
+        <div class="preset-btn active">
+          <div class="preset-distance">1000</div>
+          <div class="preset-unit">meters</div>
+        </div>
+        <div class="preset-btn">
+          <div class="preset-distance">2000</div>
+          <div class="preset-unit">meters</div>
+        </div>
+      </div>
+      <div style="max-width:700px; margin:0 auto; padding:0 20px; width:100%;">
+        <button class="next-btn">Next</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== RESULT SCREEN ===== -->
+  <div class="page" id="page-result">
+    <div style="flex:1; display:flex; flex-direction:column; overflow:auto;">
+      <div class="result-header">
+        <h1>Race Complete</h1>
+        <p style="color:var(--text-secondary); margin-top:6px; font-size:14px;">Target: 2000m</p>
+      </div>
+      <div class="result-cards">
+        <div class="result-card winner">
+          <div class="result-rank gold">1st</div>
+          <div class="result-name">Kim Minjun</div>
+          <div class="result-stats"><span>2000m</span><span>245W avg</span><span>32 SPM</span></div>
+          <div class="result-time" style="color:var(--neon-cyan);">4:12.3</div>
+        </div>
+        <div class="result-card">
+          <div class="result-rank silver">2nd</div>
+          <div class="result-name">Lee Seojin</div>
+          <div class="result-stats"><span>2000m</span><span>228W avg</span><span>30 SPM</span></div>
+          <div class="result-time">4:25.1</div>
+        </div>
+        <div class="result-card">
+          <div class="result-rank bronze">3rd</div>
+          <div class="result-name">Park Jiwon</div>
+          <div class="result-stats"><span>2000m</span><span>198W avg</span><span>28 SPM</span></div>
+          <div class="result-time">4:38.9</div>
+        </div>
+        <div class="result-card">
+          <div class="result-rank" style="color:var(--text-secondary)">4th</div>
+          <div class="result-name">Choi Yuna</div>
+          <div class="result-stats"><span>2000m</span><span>175W avg</span><span>26 SPM</span></div>
+          <div class="result-time">4:52.4</div>
+        </div>
+        <div class="result-card">
+          <div class="result-rank" style="color:var(--text-secondary)">5th</div>
+          <div class="result-name">Jung Dohyun</div>
+          <div class="result-stats"><span>2000m</span><span>162W avg</span><span>24 SPM</span></div>
+          <div class="result-time">5:01.7</div>
+        </div>
+        <div class="result-card">
+          <div class="result-rank" style="color:var(--text-secondary)">6th</div>
+          <div class="result-name">Han Soyeon</div>
+          <div class="result-stats"><span>2000m</span><span>148W avg</span><span>23 SPM</span></div>
+          <div class="result-time">5:18.2</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Page Navigation -->
+  <div class="page-nav">
+    <button class="active" onclick="showPage('race')">Race</button>
+    <button onclick="showPage('setup')">Setup</button>
+    <button onclick="showPage('result')">Result</button>
+  </div>
+</div>
+
+<script>
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.page-nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>
+
+</body>
+</html>

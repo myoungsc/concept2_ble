@@ -1,7 +1,8 @@
 enum RacePhase {
   setup,
   connecting,
-  ready,
+  warmup,
+  countdown,
   racing,
   finished,
 }

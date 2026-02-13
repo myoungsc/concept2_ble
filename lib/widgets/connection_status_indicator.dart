@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/ble_device_state.dart';
+import '../theme/app_theme.dart';
 
 class ConnectionStatusIndicator extends StatelessWidget {
   final BleConnectionState state;
@@ -12,15 +13,11 @@ class ConnectionStatusIndicator extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(
-          _icon,
-          color: _color,
-          size: 16,
-        ),
-        const SizedBox(width: 4),
+        Icon(_icon, color: _color, size: 14),
+        const SizedBox(width: 6),
         Text(
           state.label,
-          style: TextStyle(color: _color, fontSize: 12),
+          style: OlympicTextStyles.body(fontSize: 12, color: _color),
         ),
       ],
     );
@@ -29,38 +26,32 @@ class ConnectionStatusIndicator extends StatelessWidget {
   IconData get _icon {
     switch (state) {
       case BleConnectionState.disconnected:
-        return Icons.bluetooth_disabled;
-      case BleConnectionState.scanning:
-        return Icons.bluetooth_searching;
-      case BleConnectionState.connecting:
-        return Icons.bluetooth_searching;
-      case BleConnectionState.connected:
-        return Icons.bluetooth_connected;
-      case BleConnectionState.subscribed:
-        return Icons.bluetooth_connected;
-      case BleConnectionState.reconnecting:
-        return Icons.bluetooth_searching;
       case BleConnectionState.failed:
         return Icons.bluetooth_disabled;
+      case BleConnectionState.scanning:
+      case BleConnectionState.connecting:
+      case BleConnectionState.reconnecting:
+        return Icons.bluetooth_searching;
+      case BleConnectionState.connected:
+      case BleConnectionState.subscribed:
+        return Icons.bluetooth_connected;
     }
   }
 
   Color get _color {
     switch (state) {
       case BleConnectionState.disconnected:
-        return Colors.grey;
+        return OlympicColors.gray500;
       case BleConnectionState.scanning:
-        return Colors.orange;
       case BleConnectionState.connecting:
-        return Colors.orange;
-      case BleConnectionState.connected:
-        return Colors.blue;
-      case BleConnectionState.subscribed:
-        return Colors.green;
       case BleConnectionState.reconnecting:
-        return Colors.orange;
+        return OlympicColors.redOlympic;
+      case BleConnectionState.connected:
+        return OlympicColors.statusRowing;
+      case BleConnectionState.subscribed:
+        return OlympicColors.statusFinished;
       case BleConnectionState.failed:
-        return Colors.red;
+        return OlympicColors.redOlympic;
     }
   }
 }

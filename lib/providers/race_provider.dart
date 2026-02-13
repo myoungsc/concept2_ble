@@ -25,6 +25,11 @@ class RaceState {
   bool get allFinished =>
       participants.isNotEmpty && participants.every((p) => p.isFinished);
 
+  bool get allDevicesAtZero =>
+      participants.isNotEmpty &&
+      participants.every(
+          (p) => p.latestData != null && p.currentDistance <= 0);
+
   List<Participant> get sortedByDistance {
     final sorted = List<Participant>.from(participants);
     sorted.sort((a, b) => b.currentDistance.compareTo(a.currentDistance));
@@ -96,36 +101,39 @@ class RaceNotifier extends StateNotifier<RaceState> {
       final deviceId = entry.key;
       final data = entry.value;
 
-      // Auto-start race when first data arrives during ready phase
-      if (state.phase == RacePhase.ready && data.distanceMeters > 0) {
-        _startRace();
-      }
-
-      if (state.phase != RacePhase.racing && state.phase != RacePhase.ready) {
+      if (state.phase != RacePhase.warmup &&
+          state.phase != RacePhase.countdown &&
+          state.phase != RacePhase.racing) {
         return;
       }
 
       final participants = state.participants.map((p) {
         if (p.device?.remoteId.str == deviceId) {
-          final isFinished = !p.isFinished &&
-              data.distanceMeters >= state.config.targetDistanceMeters;
-          return p.copyWith(
-            latestData: data,
-            isFinished: isFinished || p.isFinished,
-            finishTime: (isFinished && !p.isFinished)
-                ? data.elapsedTime
-                : p.finishTime,
-          );
+          if (state.phase == RacePhase.racing) {
+            final justFinished = !p.isFinished &&
+                data.distanceMeters >= state.config.targetDistanceMeters;
+            return p.copyWith(
+              latestData: data,
+              isFinished: justFinished || p.isFinished,
+              finishTime: (justFinished && !p.isFinished)
+                  ? DateTime.now().difference(state.raceStartTime!)
+                  : p.finishTime,
+              machineFinishTime: (justFinished && !p.isFinished)
+                  ? data.elapsedTime
+                  : p.machineFinishTime,
+            );
+          }
+          return p.copyWith(latestData: data);
         }
         return p;
       }).toList();
 
       state = state.copyWith(participants: participants);
 
-      // Check if all finished
       if (state.allFinished && state.phase == RacePhase.racing) {
         state = state.copyWith(phase: RacePhase.finished);
         _elapsedTimer?.cancel();
+        _ref.read(bleServiceProvider).setRaceMode(false);
       }
     });
   }
@@ -163,7 +171,6 @@ class RaceNotifier extends StateNotifier<RaceState> {
   void removeParticipant(String participantId) {
     final participants =
         state.participants.where((p) => p.id != participantId).toList();
-    // Re-assign lane numbers
     final updated = participants.asMap().entries.map((entry) {
       return entry.value.copyWith(laneNumber: entry.key + 1);
     }).toList();
@@ -174,11 +181,12 @@ class RaceNotifier extends StateNotifier<RaceState> {
     state = state.copyWith(phase: phase);
   }
 
-  void enterReadyPhase() {
-    state = state.copyWith(phase: RacePhase.ready);
+  void startCountdown() {
+    _ref.read(bleServiceProvider).setRaceMode(true);
+    state = state.copyWith(phase: RacePhase.countdown);
   }
 
-  void _startRace() {
+  void startRace() {
     final now = DateTime.now();
     state = state.copyWith(
       phase: RacePhase.racing,
@@ -196,6 +204,7 @@ class RaceNotifier extends StateNotifier<RaceState> {
 
   void resetRace() {
     _elapsedTimer?.cancel();
+    _ref.read(bleServiceProvider).setRaceMode(false);
     state = const RaceState();
   }
 

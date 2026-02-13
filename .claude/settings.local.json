@@ -5,7 +5,11 @@
       "Bash(flutter pub get:*)",
       "Bash(flutter test:*)",
       "Bash(flutter build:*)",
-      "Bash(flutter pub add:*)"
+      "Bash(flutter pub add:*)",
+      "WebSearch",
+      "Bash(flutter --version:*)",
+      "WebFetch(domain:pub.dev)",
+      "WebFetch(domain:github.com)"
     ]
   }
 }
