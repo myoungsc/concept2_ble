@@ -15,6 +15,7 @@
   "scanning_pm5": "PM5 검색 중...",
   "scan_to_search": "스캔 시작을 눌러 PM5를 검색하세요",
   "connect": "연결",
+  "disconnect": "끊기",
   "done_count": "완료 ({count})",
   "enter_all_names": "모든 참가자의 이름을 입력해주세요",
   "default_participant": "참가자 {n}",
@@ -49,6 +50,10 @@
   "photo_permission_message": "사진첩 권한을 거부 하셨습니다. 사진첩 권한을 허용해주세요!",
   "close": "닫기",
   "go_to_settings": "설정으로 이동",
+
+  "bt_turn_on": "블루투스를 켜주세요",
+  "bt_turn_on_desc": "PM5 기기를 검색하려면 블루투스를 활성화해야 합니다",
+  "bt_enable": "블루투스 켜기",
 
   "ble_disconnected": "연결 안됨",
   "ble_scanning": "스캔 중…",

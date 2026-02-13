@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/ble_device_state.dart';
 import '../models/rowing_data.dart';
 import '../services/concept2_ble_service.dart';
-import '../utils/concept2_constants.dart';
+// import '../utils/concept2_constants.dart';
 
 final bleServiceProvider = Provider<Concept2BleService>((ref) {
   final service = Concept2BleService();
@@ -19,8 +19,9 @@ final isScanningProvider = StreamProvider<bool>((ref) {
 final scanResultsProvider = StreamProvider<List<ScanResult>>((ref) {
   return FlutterBluePlus.scanResults.map((results) {
     return results.where((r) {
-      final name = r.device.platformName;
-      return name.isNotEmpty && Concept2Constants.isPm5Device(name);
+      // final name = r.device.platformName;
+      // return name.isNotEmpty && Concept2Constants.isPm5Device(name);
+      return r.device.platformName.isNotEmpty;
     }).toList();
   });
 });

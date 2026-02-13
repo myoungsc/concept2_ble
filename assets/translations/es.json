@@ -15,6 +15,7 @@
   "scanning_pm5": "Buscando PM5...",
   "scan_to_search": "Presiona escanear para buscar PM5",
   "connect": "CONECTAR",
+  "disconnect": "DESCONECTAR",
   "done_count": "LISTO ({count})",
   "enter_all_names": "Por favor ingresa todos los nombres de participantes",
   "default_participant": "Participante {n}",
@@ -49,6 +50,10 @@
   "photo_permission_message": "Se denegó el permiso de fotos. ¡Por favor permite el acceso a fotos!",
   "close": "Cerrar",
   "go_to_settings": "Ir a Configuración",
+
+  "bt_turn_on": "Por favor activa el Bluetooth",
+  "bt_turn_on_desc": "Se debe activar Bluetooth para buscar dispositivos PM5",
+  "bt_enable": "Activar Bluetooth",
 
   "ble_disconnected": "Desconectado",
   "ble_scanning": "Escaneando…",

@@ -15,6 +15,7 @@
   "scanning_pm5": "PM5を検索中...",
   "scan_to_search": "スキャンを押してPM5を検索してください",
   "connect": "接続",
+  "disconnect": "切断",
   "done_count": "完了 ({count})",
   "enter_all_names": "全ての参加者名を入力してください",
   "default_participant": "参加者 {n}",
@@ -49,6 +50,10 @@
   "photo_permission_message": "写真へのアクセスが拒否されました。写真へのアクセスを許可してください！",
   "close": "閉じる",
   "go_to_settings": "設定へ移動",
+
+  "bt_turn_on": "Bluetoothをオンにしてください",
+  "bt_turn_on_desc": "PM5デバイスを検索するにはBluetoothを有効にする必要があります",
+  "bt_enable": "Bluetoothをオンにする",
 
   "ble_disconnected": "未接続",
   "ble_scanning": "スキャン中…",

@@ -15,6 +15,7 @@
   "scanning_pm5": "Scanning for PM5...",
   "scan_to_search": "Press scan to search for PM5",
   "connect": "CONNECT",
+  "disconnect": "DISCONNECT",
   "done_count": "DONE ({count})",
   "enter_all_names": "Please enter all participant names",
   "default_participant": "Participant {n}",
@@ -49,6 +50,10 @@
   "photo_permission_message": "Photo permission was denied. Please allow photo access!",
   "close": "Close",
   "go_to_settings": "Go to Settings",
+
+  "bt_turn_on": "Please turn on Bluetooth",
+  "bt_turn_on_desc": "Bluetooth must be enabled to scan for PM5 devices",
+  "bt_enable": "Turn on Bluetooth",
 
   "ble_disconnected": "Disconnected",
   "ble_scanning": "Scanning…",
